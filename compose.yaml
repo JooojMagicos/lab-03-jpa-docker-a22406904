@@ -1,0 +1,51 @@
+# No `version:` key. It has been obsolete for years and Compose warns about it.
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5442:5432"
+    volumes:
+      # Postgres 18+ images store data in a version-specific subdirectory and
+      # expect a single mount at /var/lib/postgresql, not /var/lib/postgresql/data.
+      - product-data:/var/lib/postgresql
+    healthcheck:
+      # Without this the app starts before Postgres is accepting connections
+      # and dies on its first query.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8181:8081"
+
+  pgadmin:
+    image: dpage/pgadmin4:9.8.0
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "7778:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  product-data:

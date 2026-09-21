@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: product-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5442}/${POSTGRES_DB:product_db}
+    username: ${POSTGRES_USER:product}
+    password: ${POSTGRES_PASSWORD:product}
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks that the entities match it.
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8081
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
